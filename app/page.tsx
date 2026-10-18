@@ -1,144 +1,143 @@
 import './globals.css';
-import type { Metadata } from 'next';
-import Link from 'next/link';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'PropLease AI | AI-gestuurde Contract- & Huurindexering voor Vastgoed',
-  description: 'Optimaliseer uw vastgoedbeheer met PropLease AI: de intelligente oplossing voor automatische contractanalyse en nauwkeurige huurindexering voor vastgoedbeheerders.',
-  keywords: ['PropLease AI', 'vastgoedbeheer', 'AI', 'contractanalyse', 'huurindexering', 'vastgoed', 'automatisering', 'onroerend goed'],
-  openGraph: {
-    title: 'PropLease AI | AI-gestuurde Contract- & Huurindexering voor Vastgoed',
-    description: 'Optimaliseer uw vastgoedbeheer met PropLease AI: de intelligente oplossing voor automatische contractanalyse en nauwkeurige huurindexering voor vastgoedbeheerders.',
-    url: 'https://www.propleaseai.com', // Vervang met de daadwerkelijke URL
-    siteName: 'PropLease AI',
-    locale: 'nl_NL',
-    type: 'website',
-  },
-};
+import React, { useState, useEffect, useMemo } from 'react';
+import { CheckCircleIcon, LightBulbIcon, DocumentTextIcon, ChartBarIcon, CurrencyEuroIcon, ServerStackIcon, RocketLaunchIcon, CalendarDaysIcon, CalculatorIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-export default function HomePage() {
+// Interfaces voor typeveiligheid
+interface Contract {
+  id: string;
+  adres: string;
+  huurder: string;
+  huidigeHuur: number;
+  laatsteIndexatie: string; // YYYY-MM-DD
+  status: 'Actief' | 'Inactief' | 'Verlopen';
+}
+
+interface FeatureItemProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}
+
+const FeatureItem: React.FC<FeatureItemProps> = ({ icon: Icon, title, description }) => (
+  <div className="flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+    <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+      <Icon className="h-8 w-8" />
+    </div>
+    <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+    <p className="text-gray-600">{description}</p>
+  </div>
+);
+
+// Mock data voor de demo
+const mockContracts: Contract[] = [
+  { id: 'C001', adres: 'Kerkstraat 12, Amsterdam', huurder: 'Jansen B.V.', huidigeHuur: 1500, laatsteIndexatie: '2023-01-01', status: 'Actief' },
+  { id: 'C002', adres: 'Nieuwmarkt 34, Utrecht', huurder: 'De Vries VOF', huidigeHuur: 950, laatsteIndexatie: '2023-03-15', status: 'Actief' },
+  { id: 'C003', adres: 'Stationsplein 1, Rotterdam', huurder: 'Pietersen Holding', huidigeHuur: 2100, laatsteIndexatie: '2022-11-01', status: 'Actief' },
+  { id: 'C004', adres: 'Damrak 1, Amsterdam', huurder: 'Bakker & Zoon', huidigeHuur: 1200, laatsteIndexatie: '2023-07-01', status: 'Actief' },
+  { id: 'C005', adres: 'Oudegracht 50, Utrecht', huurder: 'Smit Vastgoed', huidigeHuur: 800, laatsteIndexatie: '2022-09-01', status: 'Verlopen' },
+];
+
+// Dashboard Demo Component
+const DashboardDemo: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'indexatie' | 'contracten' | 'overzicht'>('indexatie');
+
+  // Huurindexatie State
+  const [huidigeHuur, setHuidigeHuur] = useState<number>(1200);
+  const [indexatiePercentage, setIndexatiePercentage] = useState<number>(5.5);
+  const [laatsteIndexatieDatum, setLaatsteIndexatieDatum] = useState<string>('2023-01-01');
+  const [nieuweHuur, setNieuweHuur] = useState<number | null>(null);
+
+  const berekenNieuweHuur = () => {
+    const percentage = indexatiePercentage / 100;
+    const berekendeHuur = huidigeHuur * (1 + percentage);
+    setNieuweHuur(parseFloat(berekendeHuur.toFixed(2)));
+  };
+
+  // Contracten State
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const filteredContracts = useMemo(() => {
+    return mockContracts.filter(contract =>
+      contract.adres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contract.huurder.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contract.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
+  // Overzicht Statistieken
+  const totaalActieveContracten = useMemo(() => mockContracts.filter(c => c.status === 'Actief').length, []);
+  const gemiddeldeHuurprijs = useMemo(() => {
+    const actieveContracten = mockContracts.filter(c => c.status === 'Actief');
+    if (actieveContracten.length === 0) return 0;
+    const somHuur = actieveContracten.reduce((sum, c) => sum + c.huidigeHuur, 0);
+    return parseFloat((somHuur / actieveContracten.length).toFixed(2));
+  }, []);
+  const contractenBinnen3MaandenIndexatie = useMemo(() => {
+    const today = new Date();
+    return mockContracts.filter(c => {
+      const lastIndexation = new Date(c.laatsteIndexatie);
+      const nextIndexation = new Date(lastIndexation.getFullYear() + 1, lastIndexation.getMonth(), lastIndexation.getDate());
+      const diffTime = nextIndexation.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays <= 90; // Binnen 90 dagen (3 maanden)
+    }).length;
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Hero Sectie */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
-            PropLease AI
-          </h1>
-          <p className="text-xl sm:text-2xl lg:text-3xl font-light mb-8">
-            Uw AI-partner voor intelligente contract- en huurindexering in vastgoed.
-          </p>
-          <p className="text-lg sm:text-xl mb-10 max-w-2xl mx-auto">
-            Stroomlijn uw vastgoedbeheer, elimineer fouten en maximaliseer uw rendement met onze geavanceerde AI-oplossing.
-          </p>
-          <Link href="#contact" className="inline-block bg-white text-blue-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
-            Vraag een Demo Aan
-          </Link>
-        </div>
-      </section>
+    <div className="container mx-auto px-4">
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-6 text-center">Interactieve Dashboard Demo</h2>
+      <p className="text-xl text-gray-600 mb-12 text-center max-w-3xl mx-auto">
+        Ervaar de kracht van PropLease AI met een blik op ons intuïtieve dashboard. Pas parameters aan en zie direct de impact.
+      </p>
 
-      {/* Introductie Sectie */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8">
-            De Uitdaging van Vastgoedbeheer
-          </h2>
-          <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            Vastgoedbeheerders staan voor complexe taken: het handmatig analyseren van talloze contracten, het nauwkeurig indexeren van huren volgens diverse clausules, en het waarborgen van compliance. Dit is tijdrovend, foutgevoelig en kan leiden tot aanzienlijke inkomstenderving.
-          </p>
-          <p className="text-lg text-gray-700 leading-relaxed">
-            PropLease AI is ontwikkeld om deze uitdagingen aan te gaan en uw operationele efficiëntie drastisch te verbeteren.
-          </p>
+      <div className="bg-white rounded-xl shadow-2xl p-8 lg:p-12 border border-gray-200">
+        {/* Tab Navigatie */}
+        <div className="flex border-b border-gray-200 mb-8">
+          <button
+            onClick={() => setActiveTab('indexatie')}
+            className={`py-3 px-6 text-lg font-medium ${activeTab === 'indexatie' ? 'border-b-4 border-indigo-600 text-indigo-700' : 'text-gray-600 hover:text-indigo-700'}`}
+          >
+            Huurindexatie
+          </button>
+          <button
+            onClick={() => setActiveTab('contracten')}
+            className={`py-3 px-6 text-lg font-medium ${activeTab === 'contracten' ? 'border-b-4 border-indigo-600 text-indigo-700' : 'text-gray-600 hover:text-indigo-700'}`}
+          >
+            Contracten Overzicht
+          </button>
+          <button
+            onClick={() => setActiveTab('overzicht')}
+            className={`py-3 px-6 text-lg font-medium ${activeTab === 'overzicht' ? 'border-b-4 border-indigo-600 text-indigo-700' : 'text-gray-600 hover:text-indigo-700'}`}
+          >
+            Statistieken
+          </button>
         </div>
-      </section>
 
-      {/* Hoe PropLease AI Helpt Sectie */}
-      <section className="bg-gray-100 py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-12">
-            Hoe PropLease AI Uw Werk Vereenvoudigt
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* Feature 1 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Automatische Contractanalyse
-              </h3>
-              <p className="text-gray-700">
-                Onze AI leest en interpreteert uw huurcontracten met ongekende snelheid en nauwkeurigheid. Identificeer direct belangrijke clausules, data en voorwaarden, zonder handmatige doorzoeking.
-              </p>
-            </div>
-            {/* Feature 2 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Nauwkeurige Huurindexering
-              </h3>
-              <p className="text-gray-700">
-                Genereer automatisch correcte huurindexaties op basis van de specifieke indexeringsclausules in elk contract en actuele CBS-cijfers. Nooit meer handmatige berekeningen of gemiste kansen.
-              </p>
-            </div>
-            {/* Feature 3 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Compliance & Risicobeheer
-              </h3>
-              <p className="text-gray-700">
-                Zorg ervoor dat u altijd voldoet aan de wettelijke eisen en contractuele afspraken. PropLease AI signaleert potentiële risico's en helpt u proactief te handelen.
-              </p>
-            </div>
-            {/* Feature 4 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Tijdsbesparing & Efficiëntie
-              </h3>
-              <p className="text-gray-700">
-                Bespaar honderden uren per jaar die u anders zou besteden aan repetitieve administratieve taken. Focus op strategische beslissingen en groei.
-              </p>
-            </div>
-            {/* Feature 5 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Inzichtelijke Rapporten
-              </h3>
-              <p className="text-gray-700">
-                Krijg direct toegang tot overzichtelijke dashboards en gedetailleerde rapporten over uw contractportfolio, indexatiestatus en financiële prognoses.
-              </p>
-            </div>
-            {/* Feature 6 */}
-            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out">
-              <h3 className="text-2xl font-semibold text-blue-700 mb-4">
-                Schaalbaar & Betrouwbaar
-              </h3>
-              <p className="text-gray-700">
-                Of u nu tientallen of duizenden vastgoedobjecten beheert, PropLease AI schaalt mee met uw behoeften en biedt een robuuste, betrouwbare oplossing.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* Tab Inhoud */}
+        <div>
+          {activeTab === 'indexatie' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="space-y-6">
+                <h3 className="text-2xl font-bold text-gray-900">Bereken uw nieuwe huurprijs</h3>
+                <p className="text-gray-600">Voer de huidige huur, het indexatiepercentage en de laatste indexatiedatum in om direct de nieuwe huurprijs te berekenen.</p>
 
-      {/* CTA Sectie */}
-      <section id="contact" className="bg-blue-700 text-white py-16 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-            Klaar om uw Vastgoedbeheer te Transformeren?
-          </h2>
-          <p className="text-xl mb-8">
-            Ontdek hoe PropLease AI u kan helpen om efficiënter te werken, fouten te minimaliseren en uw rendement te maximaliseren.
-          </p>
-          <Link href="/contact" className="inline-block bg-white text-blue-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
-            Neem Contact Op
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-gray-300 py-8 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-5xl mx-auto">
-          <p>&copy; {new Date().getFullYear()} PropLease AI. Alle rechten voorbehouden.</p>
-          <div className="mt-4 text-sm">
-            <Link href="/privacybeleid" className="hover:text-white mx-2">
-              Privacybeleid
-            </Link>
-            <Link href="/algemene-voorwaarden" className="hover:text-white mx-2">
-              Algemene Voorwaarden
+                <div>
+                  <label htmlFor="huidigeHuur" className="block text-sm font-medium text-gray-700 mb-1">Huidige Huurprijs (€)</label>
+                  <input
+                    type="number"
+                    id="huidigeHuur"
+                    value={huidigeHuur}
+                    onChange={(e) => setHuidigeHuur(parseFloat(e.target.value))}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg p-3"
+                    placeholder="1200"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="indexatiePercentage" className="block text-sm font-medium text-gray-700 mb-1">Indexatie Percentage (%)</label>
+                  <input
+                    type="number"
+                    id="indexatiePercentage"
+                    value={indexatiePercentage}
+                    onChange={(e) => setIndexatiePercentage(parseFloat(e.target.value))}
+                    className="mt-1 block
